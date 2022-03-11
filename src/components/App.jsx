@@ -23,7 +23,7 @@ class App extends Component {
     this.setState({ pictures: [], loading: true, inputValue: inputValue, page: 1, totalHits: 0 });
 
     if(this.state.inputValue === ''){
-      this.setState({loading: false, totalHits: 11})
+      this.setState({loading: false, totalHits: 0})
       return
     }
   };

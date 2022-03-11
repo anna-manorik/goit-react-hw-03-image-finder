@@ -8,54 +8,56 @@ import { Grid } from 'react-loader-spinner';
 class App extends Component {
   state = {
     pictures: [],
-    page: 2,
+    page: 1,
     inputValue: '',
     loading: false,
     showModal: false,
     modalImage: '',
+    totalHits: null,
   };
 
-  handleSubmit = e => {
-    e.preventDefault();
 
-    this.setState({ loading: true });
+  handleSubmit = inputValue => {
+   
 
-    const form = e.currentTarget;
-    const inputValue = form.elements.input.value;
-    const URL_API = `https://pixabay.com/api/?q=${inputValue}&page=1&key=24802256-ad66129038acba5a8b956a80c&image_type=photo&orientation=horizontal&per_page=12`;
-    fetch(URL_API)
-      .then(response => response.json())
-      .then(pictures => {
-        this.setState({
-          pictures: pictures.hits,
-          page: this.state.page + 1,
-          inputValue: inputValue,
-        });
-      })
-      .catch(error => console.log(error))
-      .finally(() => {
-        this.setState({ loading: false, page: 2 });
-      });
+    this.setState({ pictures: [], loading: true, inputValue: inputValue, page: 1, totalHits: 0 });
+
+    if(this.state.inputValue === ''){
+      this.setState({loading: false, totalHits: 11})
+      return
+    }
   };
 
-  loadMorePics = () => {
-    this.setState({ loading: true });
+  componentDidUpdate(prevProps, prevState) {
+    console.log(this.state.inputValue)
+    console.log(prevState.inputValue)
+
+    if(prevState.inputValue !== this.state.inputValue){
+      this.loadPics();
+    }
+  }
+
+  loadPics = () => {
+    this.setState({loading: true})
+
     const URL_API = `https://pixabay.com/api/?q=${this.state.inputValue}&page=${this.state.page}&key=24802256-ad66129038acba5a8b956a80c&image_type=photo&orientation=horizontal&per_page=12`;
     fetch(URL_API)
       .then(response => response.json())
-      .then(pictures =>
+      .then(pictures => {
         this.setState(prevState => {
           return {
             pictures: [...prevState.pictures, ...pictures.hits],
             page: prevState.page + 1,
+            totalHits: pictures.hits.length,
           };
-        })
-      )
+        });
+      })
       .catch(error => console.log(error))
       .finally(() => {
         this.setState({ loading: false });
       });
-  };
+  }
+
 
   // toggleLoading() {
   //   this.setState(prevState => ({ loading: !prevState.loading }));
@@ -67,17 +69,16 @@ class App extends Component {
       modalImage: largeImageURL,
     });
 
-    window.addEventListener('keydown', this.handleKeydown)
-
-  }
+    window.addEventListener('keydown', this.handleKeydown);
+  };
 
   componentWillUnmount() {
-    window.removeEventListener('keydown', this.handleKeydown)
+    window.removeEventListener('keydown', this.handleKeydown);
   }
 
   handleKeydown = e => {
-    if(e.code === 'Escape'){
-      console.log('close modal')
+    if (e.code === 'Escape') {
+      console.log('close modal');
       this.closeModal();
     }
   };
@@ -87,18 +88,18 @@ class App extends Component {
   };
 
   render() {
-    const { pictures, loading, showModal, modalImage } = this.state;
+    const { pictures, loading, showModal, modalImage, totalHits } = this.state;
 
     return (
       <>
         <SearchBar onSubmit={this.handleSubmit} />
-        <ImageGallery picturesList={pictures} onClickImg={this.openModal} />
+        {pictures.length === 0 && !loading ? 'Any results' : <ImageGallery picturesList={pictures} onClickImg={this.openModal} />}
 
         {loading && (
           <Grid height="100" width="100" color="grey" ariaLabel="loading" />
         )}
 
-        {pictures.length <= 11 ? null : <Button onClick={this.loadMorePics} />}
+        {totalHits <= 11 ? null : <Button onClick={this.loadPics} />}
 
         {showModal && (
           <Modal modalImage={modalImage} onClose={this.closeModal} />
